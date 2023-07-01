@@ -1,6 +1,14 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel
+
+
+class AlarmStatuses(Enum):
+    QUEUE = "QUEUE"
+    POSTPONED = "POSTPONED"
+    DELETED = "DELETED"
+    STOPPED = "STOPPED"
 
 
 class AlarmLinksModel(BaseModel):
@@ -20,5 +28,6 @@ class AlarmModel(BaseModel):
     name: str
     description: Optional[str]
     is_repeatable: bool
+    status: AlarmStatuses
     links: AlarmLinksModel
     times: AlarmTimesModel
