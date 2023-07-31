@@ -1,29 +1,31 @@
 import asyncio
 import logging
+from abc import ABC
 from typing import NamedTuple, Any
 
+from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from src.core.models.AlarmModel import AlarmModel, AlarmStatuses
 from src.core.models.UserModel import UserModel
 from src.services.database.database_exceptions import DBNotFound, DuplicateKey
-from src.services.database.interface import IDateBase
+from src.services.database.interface import IDataBase
 
 logger = logging.getLogger("app.database_api.mongo")
 
 
-class MongoAPI(IDateBase):
+class MongoAPI(IDataBase):
     _client = AsyncIOMotorClient
     _db = AsyncIOMotorClient  # ??
     _collections = dict
 
-    def connect_to_db(self, connection_string: str, is_test: bool = False) -> bool:
+    def connect_to_db(self, password: str) -> bool:
         try:
             # Connect client
-            self._client = AsyncIOMotorClient(connection_string)
+            self._client = AsyncIOMotorClient(self.get_connection_string(password))
 
             # Connect db
-            # self._db = self._client.Test if is_test else self._client.Prod
             self._db = self._client.Alarmbot
 
             class Collections(NamedTuple):
@@ -45,6 +47,10 @@ class MongoAPI(IDateBase):
             return False
         logger.info("Successfully connect to MongoDb")
         return True
+
+    @staticmethod
+    def get_connection_string(password: str) -> str:
+        return f"mongodb+srv://admin:{password}@tgnoteapp.fsdy0bs.mongodb.net/?retryWrites=true&w=majority"
 
     @staticmethod
     def remove_mongo_primary_id_from_data(data: dict) -> dict:
@@ -70,6 +76,19 @@ class MongoAPI(IDateBase):
             value = data.pop(_id)
             data["telegram_id"] = value
         return data
+
+    @staticmethod
+    def change_id_type(_id: str | ObjectId) -> ObjectId | str:
+        """"""
+        if isinstance(_id, str):
+            return ObjectId(_id)
+        return str(_id)
+
+    @staticmethod
+    def change_alarm_status_type(data: AlarmModel) -> dict:
+        result = data.dict()
+        result["status"] = data.status.value
+        return result
 
     # --- Users --- #
     async def get_user_by_id(self, user_id: str) -> UserModel:
@@ -101,6 +120,8 @@ class MongoAPI(IDateBase):
         """
         updated_obj = await self._collections.user.update_one({"_id": user_id},
                                                               {"$set": {"user_name": new_username}})
+        if updated_obj.modified_count == 0:
+            raise DBNotFound("User not found")
         return updated_obj.modified_count
 
     async def delete_user_by_id(self, user_id: str) -> int:
@@ -110,3 +131,55 @@ class MongoAPI(IDateBase):
             logger.info(f"User with id {user_id} not found")
             raise DBNotFound("User not found")
         return delete_obj.deleted_count
+
+    # --- Alarms --- #
+    async def write_new_alarm(self, alarm: AlarmModel) -> str:
+        """Add new alarm to Alarm collection Mongo database,
+        If alarm with id already exist, rise DuplicateKey exception"""
+        alarm_dict = self.change_alarm_status_type(alarm)
+        try:
+            inserted_obj = await self._collections.alarms.insert_one(alarm_dict)
+        except DuplicateKeyError:
+            logger.info(f"Alarm duplicate: {alarm}")
+            raise DuplicateKey("Alarm duplicate key")
+        return str(inserted_obj.inserted_id)
+
+    async def get_alarm_by_id(self, alarm_id: str) -> AlarmModel:
+        """Get alarm object from Alarm collection Mongo database
+        If no alarm match id, raise DBNotFound exception"""
+        alarm_id = self.change_id_type(alarm_id)
+        alarm = await self._collections.alarms.find_one(alarm_id)
+        if alarm is None:
+            logger.info(f"Alarm with id {alarm_id} not found")
+            raise DBNotFound("Alarm not found")
+        alarm = self.remove_mongo_primary_id_from_data(alarm)
+        alarm = AlarmModel.parse_obj(alarm)
+        return alarm
+
+    async def get_all_alarms_by_condition(self, condition: dict) -> list[AlarmModel]:
+        """Get all alarms match condition, if no matches, raise DBNotFound exception"""
+        alarms = self._collections.alarms.find(condition)
+        result = list()
+        for alarm in await alarms.to_list(length=100):
+            result.append(AlarmModel.parse_obj(alarm))
+        if not len(result):
+            raise DBNotFound("Alarms match condition not found")
+        return result
+
+    async def update_alarm(self, alarm_id: str, new_data: dict) -> int:
+        """Update alarm fields of Mongo database object,"""
+        update_obj = await self._collections.alarms.update_one({"_id": self.change_id_type(alarm_id)},
+                                                               {"$set": new_data})
+        if update_obj.modified_count == 0:
+            raise DBNotFound("Alarm not found")
+        return update_obj.modified_count
+
+    async def delete_alarm_by_id(self, alarm_id: dict) -> int:
+        """"""
+        deleted_obj = await self._collections.alarms.delete_one({"_id": alarm_id})
+        if deleted_obj.delete_count == 0:
+            raise DBNotFound(f"Alarm with id {alarm_id} not found")
+        return deleted_obj.delete_count
+
+    async def delete_all_alarms_by_condition(self, condition: dict) -> int:
+        ...

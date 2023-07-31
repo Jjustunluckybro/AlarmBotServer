@@ -4,15 +4,14 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class AlarmStatuses(Enum):
+class AlarmStatuses(str, Enum):
     QUEUE = "QUEUE"
     POSTPONED = "POSTPONED"
-    DELETED = "DELETED"
     STOPPED = "STOPPED"
+    DELETED = "DELETED"
 
 
 class AlarmLinksModel(BaseModel):
-    id: str
     user_id: str
     parent_id: str
 
