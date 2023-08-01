@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 
 class ThemesLinksModel(BaseModel):
-    id: str
     user_id: str
 
 

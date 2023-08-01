@@ -23,5 +23,11 @@ async def update_alarm(alarm_id: str, new_data: dict, db: IDataBase) -> int:
     return update_count
 
 
-async def update_alarm_status():
-    ...
+async def delete_alarm(alarm_id, db: IDataBase) -> int:
+    deleted_count = await db.delete_alarm_by_id(alarm_id)
+    return deleted_count
+
+
+async def delete_all_alarms_by_condition(condition: dict, db: IDataBase) -> int:
+    deleted_count = await db.delete_all_alarms_by_condition(condition)
+    return deleted_count

@@ -1,15 +1,16 @@
-import asyncio
 import logging
-from abc import ABC
 from typing import NamedTuple, Any
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from src.core.models.AlarmModel import AlarmModel, AlarmStatuses
+from src.core.models.NoteModel import NoteModel
+from src.core.models.ThemeModel import ThemeModel
 from src.core.models.UserModel import UserModel
-from src.services.database.database_exceptions import DBNotFound, DuplicateKey
+from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
 from src.services.database.interface import IDataBase
 
 logger = logging.getLogger("app.database_api.mongo")
@@ -17,7 +18,7 @@ logger = logging.getLogger("app.database_api.mongo")
 
 class MongoAPI(IDataBase):
     _client = AsyncIOMotorClient
-    _db = AsyncIOMotorClient  # ??
+    _db = AsyncIOMotorClient
     _collections = dict
 
     def connect_to_db(self, password: str) -> bool:
@@ -80,9 +81,12 @@ class MongoAPI(IDataBase):
     @staticmethod
     def change_id_type(_id: str | ObjectId) -> ObjectId | str:
         """"""
-        if isinstance(_id, str):
-            return ObjectId(_id)
-        return str(_id)
+        try:
+            if isinstance(_id, str):
+                return ObjectId(_id)
+            return str(_id)
+        except InvalidId:
+            raise InvalidIdException(f"{_id} is not a valid, it must be a 12-byte input or a 24-character hex string")
 
     @staticmethod
     def change_alarm_status_type(data: AlarmModel) -> dict:
@@ -126,11 +130,11 @@ class MongoAPI(IDataBase):
 
     async def delete_user_by_id(self, user_id: str) -> int:
         """Delete user from User collection by telegram_id"""
-        delete_obj = await self._collections.user.delete_one({"telegram_id": user_id})
-        if delete_obj.deleted_count == 0:
+        deleted_result = await self._collections.user.delete_one({"telegram_id": user_id})
+        if deleted_result.deleted_count == 0:
             logger.info(f"User with id {user_id} not found")
             raise DBNotFound("User not found")
-        return delete_obj.deleted_count
+        return deleted_result.deleted_count
 
     # --- Alarms --- #
     async def write_new_alarm(self, alarm: AlarmModel) -> str:
@@ -174,12 +178,114 @@ class MongoAPI(IDataBase):
             raise DBNotFound("Alarm not found")
         return update_obj.modified_count
 
-    async def delete_alarm_by_id(self, alarm_id: dict) -> int:
+    async def delete_alarm_by_id(self, alarm_id: str) -> int:
         """"""
-        deleted_obj = await self._collections.alarms.delete_one({"_id": alarm_id})
-        if deleted_obj.delete_count == 0:
+        deleted_result = await self._collections.alarms.delete_one({"_id": self.change_id_type(alarm_id)})
+        if deleted_result.deleted_count == 0:
             raise DBNotFound(f"Alarm with id {alarm_id} not found")
-        return deleted_obj.delete_count
+        return deleted_result.deleted_count
 
-    async def delete_all_alarms_by_condition(self, condition: dict) -> int:
-        ...
+    async def delete_all_alarms_by_condition(self, condition: dict) -> dict:
+        """"""
+        deleted_result = await self._collections.alarms.delete_many(condition)
+        return deleted_result.deleted_count
+
+    # --- Themes --- #
+    async def write_new_theme(self, theme: ThemeModel) -> str:
+        """"""
+        try:
+            inserted_obj = await self._collections.themes.insert_one(theme.dict())
+        except DuplicateKeyError:
+            logger.info(f"Theme duplicate: {theme}")
+            raise DuplicateKey("Theme duplicate key")
+        return str(inserted_obj.inserted_id)
+
+    async def get_theme_by_id(self, theme_id: str) -> ThemeModel:
+        """"""
+        theme_id = self.change_id_type(theme_id)
+        theme = await self._collections.themes.find_one(theme_id)
+        if theme is None:
+            logger.info(f"Theme with id {theme_id} not found")
+            raise DBNotFound("Theme not found")
+        theme = self.remove_mongo_primary_id_from_data(theme)
+        theme = ThemeModel.parse_obj(theme)
+        return theme
+
+    async def get_all_themes_by_condition(self, condition: dict) -> list[ThemeModel]:
+        themes = self._collections.themes.find(condition)
+        result = list()
+        for theme in await themes.to_list(length=100):
+            result.append(theme)
+        if not len(result):
+            raise DBNotFound("Themes not found")
+        return result
+
+    async def update_theme(self, theme_id: str, new_data: dict) -> int:
+        update_obj = await self._collections.themes.update_one({"_id": self.change_id_type(theme_id)},
+                                                               {"$set": new_data})
+        if update_obj.modified_count == 0:
+            raise DBNotFound("Theme not found")
+        return update_obj.modified_count
+
+    async def delete_theme_by_id(self, theme_id: str) -> int:
+        """"""
+        deleted_result = await self._collections.themes.delete_one({"_id": self.change_id_type(theme_id)})
+        if deleted_result.deleted_count == 0:
+            raise DBNotFound("Theme not found")
+        return deleted_result.deleted_count
+
+    async def delete_all_themes_by_condition(self, condition: dict) -> int:
+        """"""
+        deleted_result = await self._collections.themes.delete_many(condition)
+        return deleted_result.deleted_count
+
+    # --- Notes --- #
+    async def write_new_note(self, note: NoteModel) -> str:
+        """Write new note to db"""
+        try:
+            inserted_obj = await self._collections.notes.insert_one(note.dict())
+        except DuplicateKeyError:
+            logger.info(f"Note duplicate: {note}")
+            raise DuplicateKey("Note duplicate key")
+        return str(inserted_obj.inserted_id)
+
+    async def get_note_by_id(self, note_id: str) -> NoteModel:
+        """Get note from db by id"""
+        note_id = self.change_id_type(note_id)
+        note = await self._collections.notes.find_one(note_id)
+        if note is None:
+            logger.info(f"Note with id {note_id} not found")
+            raise DBNotFound("Note not found")
+        note = self.remove_mongo_primary_id_from_data(note)
+        note = NoteModel.parse_obj(note)
+        return note
+
+    async def get_all_notes_by_condition(self, condition: dict) -> list[NoteModel]:
+        """Get all notes from db by condition"""
+        notes = self._collections.notes.find(condition)
+        result = list()
+        for note in await notes.to_list(length=100):
+            result.append(note)
+        if not len(result):
+            raise DBNotFound("Notes not found")
+        return result
+
+    async def update_note(self, note_id: str, new_data: dict) -> int:
+        """Update note instance in db with new data"""
+        update_obj = await self._collections.notes.update_one({"_id": self.change_id_type(note_id)},
+                                                              {"$set": new_data})
+        if update_obj.modified_count == 0:
+            raise DBNotFound("Note not found")
+        return update_obj.modified_count
+
+    async def delete_note_by_id(self, note_id: str) -> int:
+        """Delete single note from db by id"""
+        deleted_result = await self._collections.notes.delete_one({"_id": self.change_id_type(note_id)})
+        if deleted_result.deleted_count == 0:
+            raise DBNotFound("Note not found")
+        return deleted_result.deleted_count
+
+    async def delete_all_notes_by_condition(self, condition: dict) -> int:
+        """Delete many notes by condition in db"""
+        deleted_result = await self._collections.notes.delete_many(condition)
+        return deleted_result.deleted_count

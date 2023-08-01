@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from src.services.database.mongo_db import MongoAPI
 from src.services.routers.users import router as user_routers
 from src.services.routers.alarms import router as alarms_routers
+from src.services.routers.themes import router as themes_routers
+from src.services.routers.notes import router as note_routers
 
 # Get env variables
 load_dotenv()
@@ -15,7 +17,9 @@ TEST_DB_USER_PASSWORD = os.getenv("TEST_DB_USER_PASSWORD")
 # Register routers
 ROUTERS = (
     user_routers,
-    alarms_routers
+    alarms_routers,
+    themes_routers,
+    note_routers
 )
 
 # Connect to db

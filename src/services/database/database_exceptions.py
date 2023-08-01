@@ -8,3 +8,6 @@ class DBNotFound(DBException):
 
 class DuplicateKey(DBException):
     ...
+
+class InvalidIdException(DBException):
+    ...

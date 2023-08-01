@@ -15,7 +15,6 @@ class NoteDataModel(BaseModel):
 
 
 class NoteLinksModel(BaseModel):
-    id: str
     user_id: str
     theme_id: str
 
