@@ -3,7 +3,7 @@ from starlette.requests import Request
 from starlette import status
 from src.core.models.NoteModel import NoteModel
 from src.infrastructure.notes import db_interaction
-from src.services.database.database_exceptions import DBNotFound, DuplicateKey
+from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
 from src.services.database.interface import IDataBase
 
 router = APIRouter(
@@ -20,16 +20,15 @@ async def get_note(r: Request, note_id: str) -> NoteModel:
         return note
     except DBNotFound as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except InvalidIdException as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.post("/create_note", status_code=status.HTTP_201_CREATED)
 async def create_note(r: Request, note: NoteModel) -> str:
     db: IDataBase = r.app.state.db
-    try:
-        note_id = await db_interaction.write_note_to_db(note, db)
-        return note_id
-    except DuplicateKey as err:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
+    note_id = await db_interaction.write_note_to_db(note, db)
+    return note_id
 
 
 @router.post("/get_all_notes_by_condition", status_code=status.HTTP_200_OK)
@@ -50,6 +49,8 @@ async def update_note(r: Request, note_id: str, new_data: dict) -> dict:
         return {"update_count": update_count}
     except DBNotFound as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except InvalidIdException as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.delete("/delete_note/{note_id}", status_code=status.HTTP_200_OK)
@@ -60,6 +61,8 @@ async def delete_note(r: Request, note_id: str) -> dict:
         return {"deleted_count": deleted_count}
     except DBNotFound as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except InvalidIdException as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.delete("/delete_all_notes_by_condition", status_code=status.HTTP_200_OK)

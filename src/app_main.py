@@ -12,6 +12,7 @@ from src.services.routers.notes import router as note_routers
 
 # Get env variables
 load_dotenv()
+
 TEST_DB_USER_PASSWORD = os.getenv("TEST_DB_USER_PASSWORD")
 
 # Register routers
