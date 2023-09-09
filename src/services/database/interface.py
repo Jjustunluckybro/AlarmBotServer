@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from src.core.models.UserModel import UserModel
 from src.core.models.AlarmModel import AlarmModel
-from src.core.models.ThemeModel import ThemeModel
+from src.core.models.ThemeModel import ThemeModel, ThemeModelForCreate
 from src.core.models.NoteModel import NoteModel
 
 
@@ -70,7 +70,7 @@ class IDataBase(ABC):
 
     #     # --- Themes methods --- #
     @abstractmethod
-    async def write_new_theme(self, theme: ThemeModel) -> str:
+    async def write_new_theme(self, theme: ThemeModelForCreate) -> str:
         """Write new theme to db"""
         raise NotImplementedError
 

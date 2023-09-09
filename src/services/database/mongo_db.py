@@ -8,9 +8,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from src.core.models.AlarmModel import AlarmModel, AlarmStatuses
 from src.core.models.NoteModel import NoteModel
-from src.core.models.ThemeModel import ThemeModel
+from src.core.models.ThemeModel import ThemeModel, ThemeModelForCreate
 from src.core.models.UserModel import UserModel
-from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
+from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException, InvalidDict
 from src.services.database.interface import IDataBase
 
 logger = logging.getLogger("app.database_api.mongo")
@@ -87,6 +87,15 @@ class MongoAPI(IDataBase):
             return str(_id)
         except InvalidId:
             raise InvalidIdException(f"{_id} is not a valid, it must be a 12-byte input or a 24-character hex string")
+
+    @staticmethod
+    def change_id_type_in_dict(data: dict) -> dict:
+        """"""
+        try:
+            data["_id"] = MongoAPI.change_id_type(data["_id"])
+            return data
+        except KeyError as err:
+            return data
 
     @staticmethod
     def change_alarm_status_type(data: AlarmModel) -> dict:
@@ -191,7 +200,7 @@ class MongoAPI(IDataBase):
         return deleted_result.deleted_count
 
     # --- Themes --- #
-    async def write_new_theme(self, theme: ThemeModel) -> str:
+    async def write_new_theme(self, theme: ThemeModelForCreate) -> str:
         """"""
         try:
             inserted_obj = await self._collections.themes.insert_one(theme.dict())
@@ -207,15 +216,18 @@ class MongoAPI(IDataBase):
         if theme is None:
             logger.info(f"Theme with id {theme_id} not found")
             raise DBNotFound("Theme not found")
-        theme = self.remove_mongo_primary_id_from_data(theme)
-        theme = ThemeModel.parse_obj(theme)
+        theme: dict = dict(theme)
+        theme = self.change_id_type_in_dict(theme)
+        theme: ThemeModel = ThemeModel.parse_obj(theme)
         return theme
 
     async def get_all_themes_by_condition(self, condition: dict) -> list[ThemeModel]:
-        themes = self._collections.themes.find(condition)
+        themes = self._collections.themes.find(self.change_id_type_in_dict(condition))
         result = list()
         for theme in await themes.to_list(length=100):
-            result.append(theme)
+            theme: dict = dict(theme)
+            theme = self.change_id_type_in_dict(theme)
+            result.append(ThemeModel.parse_obj(theme))
         if not len(result):
             raise DBNotFound("Themes not found")
         return result

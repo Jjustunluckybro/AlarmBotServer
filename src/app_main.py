@@ -9,6 +9,7 @@ from src.services.routers.users import router as user_routers
 from src.services.routers.alarms import router as alarms_routers
 from src.services.routers.themes import router as themes_routers
 from src.services.routers.notes import router as note_routers
+from src.services.routers.ping import router as ping_router
 
 # Get env variables
 load_dotenv()
@@ -20,7 +21,8 @@ ROUTERS = (
     user_routers,
     alarms_routers,
     themes_routers,
-    note_routers
+    note_routers,
+    ping_router
 )
 
 # Connect to db

@@ -1,4 +1,4 @@
-from src.core.models.ThemeModel import ThemeModel
+from src.core.models.ThemeModel import ThemeModel, ThemeModelForCreate
 
 from src.services.database.interface import IDataBase
 
@@ -8,7 +8,7 @@ async def get_theme_from_db(theme_id: str, db: IDataBase) -> ThemeModel:
     return theme
 
 
-async def write_theme_to_db(theme: ThemeModel, db: IDataBase) -> str:
+async def write_theme_to_db(theme: ThemeModelForCreate, db: IDataBase) -> str:
     theme_id = await db.write_new_theme(theme)
     return theme_id
 

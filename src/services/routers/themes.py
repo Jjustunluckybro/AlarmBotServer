@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from starlette.requests import Request
 from starlette import status
-from src.core.models.ThemeModel import ThemeModel
+from src.core.models.ThemeModel import ThemeModel, ThemeModelForCreate
 from src.infrastructure.themes import db_interaction
 from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
 from src.services.database.interface import IDataBase
+
+
+from logging import getLogger
+
+logger = getLogger("app.router.themes")
 
 router = APIRouter(
     prefix="/themes",
@@ -25,7 +30,7 @@ async def get_theme(r: Request, theme_id: str) -> ThemeModel:
 
 
 @router.post("/create_theme", status_code=status.HTTP_201_CREATED)
-async def create_theme(r: Request, theme: ThemeModel) -> str:
+async def create_theme(r: Request, theme: ThemeModelForCreate) -> str:
     db: IDataBase = r.app.state.db
     theme_id = await db_interaction.write_theme_to_db(theme, db)
     return theme_id
@@ -33,6 +38,7 @@ async def create_theme(r: Request, theme: ThemeModel) -> str:
 
 @router.post("/get_all_themes_by_condition", status_code=status.HTTP_200_OK)
 async def get_all_themes_by_condition(r: Request, condition: dict) -> list[ThemeModel]:
+    logger.info(f"POST/ themes/get_all_themes_by_condition with condition - {condition} from {r.url}")
     db: IDataBase = r.app.state.db
     try:
         themes = await db_interaction.get_all_themes_by_condition(condition, db)
