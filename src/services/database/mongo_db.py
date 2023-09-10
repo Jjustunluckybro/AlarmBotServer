@@ -71,7 +71,7 @@ class MongoAPI(IDataBase):
 
     @staticmethod
     def change_id_field_to_telegram_id(data: dict) -> dict:
-        """"""
+        """Changing "_id" key to "telegram_id" key"""
         _id = "_id"
         if _id in data:
             value = data.pop(_id)
@@ -94,7 +94,7 @@ class MongoAPI(IDataBase):
         try:
             data["_id"] = MongoAPI.change_id_type(data["_id"])
             return data
-        except KeyError as err:
+        except KeyError:
             return data
 
     @staticmethod
@@ -105,7 +105,11 @@ class MongoAPI(IDataBase):
 
     # --- Users --- #
     async def get_user_by_id(self, user_id: str) -> UserModel:
-        """Get user object from user collection Mongo database"""
+        """
+        Get user object from user collection Mongo database
+        :return UserModel
+        :raise DBNotFound if user with id not found
+        """
         user = await self._collections.user.find_one(user_id)
         if user is None:
             logger.info(f"User with id {user_id} not found")
@@ -115,7 +119,11 @@ class MongoAPI(IDataBase):
         return user
 
     async def write_new_user(self, user: UserModel) -> str:
-        """Add new user to user collection Mongo database"""
+        """
+        Add new user to user collection Mongo database
+        :raise DuplicateKey if user with same id already exist
+        :return Writen user id
+        """
         user_dict = self.change_telegram_id_field_to_id_field(user.dict())
         try:
             inserted_obj = await self._collections.user.insert_one(user_dict)
@@ -138,8 +146,12 @@ class MongoAPI(IDataBase):
         return updated_obj.modified_count
 
     async def delete_user_by_id(self, user_id: str) -> int:
-        """Delete user from User collection by telegram_id"""
-        deleted_result = await self._collections.user.delete_one({"telegram_id": user_id})
+        """
+        Delete user from User collection by telegram_id
+        :return num of deleted objects
+        :raise DBNotFound if no user with id
+        """
+        deleted_result = await self._collections.user.delete_one({"_id": user_id})
         if deleted_result.deleted_count == 0:
             logger.info(f"User with id {user_id} not found")
             raise DBNotFound("User not found")
