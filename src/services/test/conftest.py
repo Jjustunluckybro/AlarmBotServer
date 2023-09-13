@@ -3,8 +3,18 @@ import pytest
 
 from typing import AsyncGenerator
 from httpx import AsyncClient
+from pydantic import BaseModel
 
 from src.app_main import app
+
+
+class ThemeCash(BaseModel):
+    theme_id_1: None | str = None
+    theme_id_2: None | str = None
+
+
+def pytest_configure():
+    pytest.theme_cash = ThemeCash()
 
 
 @pytest.fixture(scope="session")

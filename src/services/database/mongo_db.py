@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from src.core.models.AlarmModel import AlarmModel, AlarmStatuses
 from src.core.models.NoteModel import NoteModel
-from src.core.models.ThemeModel import ThemeModel, ThemeModelForCreate
+from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
 from src.core.models.UserModel import UserModel
 from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException, InvalidDict
 from src.services.database.interface import IDataBase
@@ -212,7 +212,7 @@ class MongoAPI(IDataBase):
         return deleted_result.deleted_count
 
     # --- Themes --- #
-    async def write_new_theme(self, theme: ThemeModelForCreate) -> str:
+    async def write_new_theme(self, theme: ThemeModelWrite) -> str:
         """"""
         try:
             inserted_obj = await self._collections.themes.insert_one(theme.dict())
@@ -261,6 +261,8 @@ class MongoAPI(IDataBase):
     async def delete_all_themes_by_condition(self, condition: dict) -> int:
         """"""
         deleted_result = await self._collections.themes.delete_many(condition)
+        if deleted_result.deleted_count == 0:
+            raise DBNotFound("Themes not found")
         return deleted_result.deleted_count
 
     # --- Notes --- #

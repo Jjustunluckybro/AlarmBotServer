@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from starlette.requests import Request
 from starlette import status
-from src.core.models.ThemeModel import ThemeModel, ThemeModelForCreate
+from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
 from src.infrastructure.themes import db_interaction
 from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
 from src.services.database.interface import IDataBase
-
 
 from logging import getLogger
 
@@ -30,20 +29,24 @@ async def get_theme(r: Request, theme_id: str) -> ThemeModel:
 
 
 @router.post("/create_theme", status_code=status.HTTP_201_CREATED)
-async def create_theme(r: Request, theme: ThemeModelForCreate) -> str:
+async def create_theme(r: Request, theme: ThemeModelWrite) -> str:
     db: IDataBase = r.app.state.db
     theme_id = await db_interaction.write_theme_to_db(theme, db)
     return theme_id
 
 
-@router.post("/get_all_themes_by_condition", status_code=status.HTTP_200_OK)
-async def get_all_themes_by_condition(r: Request, condition: dict) -> list[ThemeModel]:
-    logger.info(f"POST/ themes/get_all_themes_by_condition with condition - {condition} from {r.url}")
+@router.get("/get_all_user_themes/{user_id}")
+async def get_all_user_themes(r: Request, user_id: str) -> list[ThemeModel]:
+    logger.info(f"GET:Start:/get_all_user_themes/{user_id}")
     db: IDataBase = r.app.state.db
     try:
-        themes = await db_interaction.get_all_themes_by_condition(condition, db)
+        themes = await db_interaction.get_all_themes_by_condition(
+            {"links": {"user_id": user_id}}, db
+        )
+        logger.info(f"GET:Success:/get_all_user_themes/{user_id}:{themes}")
         return themes
     except DBNotFound as err:
+        logger.info(f"GET:Success:/get_all_user_themes/{user_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
 
@@ -71,11 +74,16 @@ async def delete_theme(r: Request, theme_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
-@router.delete("/delete_all_themes_by_condition", status_code=status.HTTP_200_OK)
-async def delete_all_themes_by_condition(r: Request, condition: dict) -> dict:
+@router.delete("/delete_all_user_themes/{user_id}")
+async def delete_all_user_themes(r: Request, user_id: str) -> dict:
+    logger.info(f"DELETE:Start:/delete_all_user_themes/{user_id}")
     db: IDataBase = r.app.state.db
     try:
-        deleted_count = await db_interaction.delete_all_themes_from_db_by_condition(condition, db)
-        return {"deleted_count": deleted_count}
+        delete_count = await db_interaction.delete_all_themes_from_db_by_condition(
+            {"links": {"user_id": user_id}}, db
+        )
+        logger.info(f"DELETE:Success:/delete_all_user_themes/{user_id}:delete count - {delete_count}")
+        return {"delete_count": delete_count}
     except DBNotFound as err:
+        logger.info(f"DELETE:Success:/delete_all_user_themes/{user_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
