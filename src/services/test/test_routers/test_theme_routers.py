@@ -108,7 +108,7 @@ class TestThemeRouters:
             (
                     status.HTTP_200_OK,
                     None,
-                    {"delete_count": 1}
+                    {"deleted_count": 1}
             ),
             (
                     status.HTTP_404_NOT_FOUND,
@@ -120,27 +120,29 @@ class TestThemeRouters:
                     {"detail": "1 is not a valid, it must be a 12-byte input or a 24-character hex string"})
         ]
     )
-    async def test_delete_theme(self, ac: AsyncClient, code, theme_id, res_body):  # TODO
+    async def test_delete_theme(self, ac: AsyncClient, code, theme_id, res_body):
         if code == status.HTTP_200_OK:
             theme_id = pytest.theme_cash.theme_id_1
 
         r = await ac.delete(f"themes/delete_theme/{theme_id}")
         assert r.status_code == code
+        assert r.json() == res_body
 
     @pytest.mark.parametrize(
         "code, user_id, res_body",
         [
-            (status.HTTP_200_OK, Data.user_id, {"delete_count": 3}),
-            (status.HTTP_404_NOT_FOUND, Data.non_exist_id, {"detail": "Theme not found"}),
+            (status.HTTP_200_OK, Data.user_id, {"deleted_count": 3}),
+            (status.HTTP_404_NOT_FOUND, Data.non_exist_id, {"detail": "Themes not found"}),
         ]
     )
-    async def test_delete_all_user_themes(self, ac: AsyncClient, code, user_id, res_body):  # TODO
+    async def test_delete_all_user_themes(self, ac: AsyncClient, code, user_id, res_body):
         if code == status.HTTP_200_OK:
-            theme_id = pytest.theme_cash.theme_id_1
-            for i in range(0, 2):
+            for i in range(0, 3):
                 await ac.post(
                     f"themes/create_theme",
                     json=Data.test_theme_model_to_write.dict()
                 )
+
         r = await ac.delete(f"themes/delete_all_user_themes/{user_id}")
         assert r.status_code == code
+        assert r.json() == res_body

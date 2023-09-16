@@ -83,7 +83,7 @@ async def delete_all_user_themes(r: Request, user_id: str) -> dict:
             {"links": {"user_id": user_id}}, db
         )
         logger.info(f"DELETE:Success:/delete_all_user_themes/{user_id}:delete count - {delete_count}")
-        return {"delete_count": delete_count}
+        return {"deleted_count": delete_count}
     except DBNotFound as err:
         logger.info(f"DELETE:Success:/delete_all_user_themes/{user_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
