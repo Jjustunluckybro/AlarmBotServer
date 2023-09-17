@@ -1,10 +1,14 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from starlette.requests import Request
 from starlette import status
-from src.core.models.NoteModel import NoteModel
+from src.core.models.NoteModel import NoteModelWrite, NoteModelRouterInput, NoteModel, NoteLinksModel
 from src.infrastructure.notes import db_interaction
-from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
+from src.services.database.database_exceptions import DBNotFound, InvalidIdException
 from src.services.database.interface import IDataBase
+
+logger = logging.getLogger("app.router.notes")
 
 router = APIRouter(
     prefix="/notes",
@@ -12,64 +16,113 @@ router = APIRouter(
 )
 
 
-@router.get("/get_note/{note_id}", status_code=status.HTTP_200_OK)
-async def get_note(r: Request, note_id: str) -> NoteModel:
-    db: IDataBase = r.app.state.db
-    try:
-        note = await db_interaction.get_note_from_db(note_id, db)
-        return note
-    except DBNotFound as err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
-    except InvalidIdException as err:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
-
-
 @router.post("/create_note", status_code=status.HTTP_201_CREATED)
-async def create_note(r: Request, note: NoteModel) -> str:
+async def create_note(r: Request, note: NoteModelRouterInput) -> str:
+    logger.info(f"POST:Start:/create_note:{note}")
     db: IDataBase = r.app.state.db
     note_id = await db_interaction.write_note_to_db(note, db)
+    logger.info(f"POST:Success:/create_note:{note}:{note_id}")
     return note_id
 
 
-@router.post("/get_all_notes_by_condition", status_code=status.HTTP_200_OK)
-async def get_all_notes_by_condition(r: Request, condition: dict) -> list[NoteModel]:
+@router.get("/get_note/{note_id}", status_code=status.HTTP_200_OK)
+async def get_note(r: Request, note_id: str) -> NoteModel:
+    logger.info(f"GET:Start:/get_note:{note_id}")
     db: IDataBase = r.app.state.db
     try:
-        note = await db_interaction.get_all_notes_by_condition(condition, db)
+        note = await db_interaction.get_note_from_db(note_id, db)
+        logger.info(f"GET:Success:/get_note:{note_id}:{note}")
         return note
     except DBNotFound as err:
+        logger.info(f"GET:Success handle exception:/get_note:{note_id}:{err}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except InvalidIdException as err:
+        logger.info(f"GET:Success handle exception:/get_note:{note_id}:{err}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+
+
+@router.get("/get_all_notes_by_theme_id/{theme_id}", status_code=status.HTTP_200_OK)
+async def get_all_notes_by_theme_id(r: Request, theme_id: str) -> list[NoteModel]:
+    logger.info(f"GET:Start:/get_all_notes_by_theme_id:{theme_id}")
+    db: IDataBase = r.app.state.db
+    try:
+        NoteLinksModel.theme_id_must_convert_to_object_id(theme_id)  # Validate theme_id
+        note = await db_interaction.get_all_notes_by_condition(
+            {"links.theme_id": theme_id}, db
+        )
+        logger.info(f"GET:Success:/get_all_notes_by_theme_id:{theme_id}:{note}")
+        return note
+    except DBNotFound as err:
+        logger.info(f"GET:Success handle exception:/get_all_notes_by_theme_id:{theme_id}:{err}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except ValueError as err:
+        logger.info(f"GET:Success handle exception:/get_all_notes_by_theme_id:{theme_id}:{err}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+
+
+@router.get("/get_all_notes_by_user_id/{user_id}", status_code=status.HTTP_200_OK)  # TODO
+async def get_all_notes_by_user_id(r: Request, user_id: str) -> list[NoteModel]:
+    logger.info(f"GET:Start:/get_all_notes_by_user_id:{user_id}")
+    db: IDataBase = r.app.state.db
+    try:
+        note = await db_interaction.get_all_notes_by_condition(
+            {"links.user_id": user_id}, db
+        )
+        logger.info(f"GET:Success:/get_all_notes_by_user_id:{user_id}:{note}")
+        return note
+    except DBNotFound as err:
+        logger.info(f"GET:Success handle exception:/get_all_notes_by_user_id:{user_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
 
 @router.patch("/update_note/{note_id}", status_code=status.HTTP_200_OK)
 async def update_note(r: Request, note_id: str, new_data: dict) -> dict:
+    logger.info(f"PATCH:Start:/update_note/{note_id}|{new_data}")
     db: IDataBase = r.app.state.db
     try:
         update_count = await db_interaction.update_note(note_id, new_data, db)
-        return {"update_count": update_count}
+        result = {"update_count": update_count}
+        logger.info(f"PATCH:Success:/update_note/{note_id}:{result}")
+        return result
     except DBNotFound as err:
+        logger.info(f"GET:Success handle exception:/update_note:{note_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
     except InvalidIdException as err:
+        logger.info(f"GET:Success handle exception:/update_note:{note_id}:{err}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.delete("/delete_note/{note_id}", status_code=status.HTTP_200_OK)
 async def delete_note(r: Request, note_id: str) -> dict:
+    logger.info(f"DELETE:Start:/delete_note/{note_id}")
     db: IDataBase = r.app.state.db
     try:
         deleted_count = await db_interaction.delete_note(note_id, db)
-        return {"deleted_count": deleted_count}
+        result = {"deleted_count": deleted_count}
+        logger.info(f"DELETE:Success:/delete_note/{note_id}:{result}")
+        return result
     except DBNotFound as err:
+        logger.info(f"GET:Success handle exception:/delete_note:{note_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
     except InvalidIdException as err:
+        logger.info(f"GET:Success handle exception:/delete_note:{note_id}:{err}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
-@router.delete("/delete_all_notes_by_condition", status_code=status.HTTP_200_OK)
-async def delete_all_notes_by_condition(r: Request, condition: dict) -> dict:
+@router.delete("/delete_all_note_by_theme_id/{theme_id}", status_code=status.HTTP_200_OK)  # TODO
+async def delete_all_note_by_theme_id(r: Request, theme_id: str) -> dict:
+    logger.info(f"DELETE:Start:/delete_all_note_by_theme_id/{theme_id}")
     db: IDataBase = r.app.state.db
     try:
-        deleted_count = await db_interaction.delete_all_notes_by_condition(condition, db)
-        return {"deleted_count": deleted_count}
+        deleted_count = await db_interaction.delete_all_notes_by_condition(
+            {"links": {"theme_id": theme_id}}, db
+        )
+        result = {"deleted_count": deleted_count}
+        logger.info(f"DELETE:Success:/delete_all_note_by_theme_id/{theme_id}:")
+        return result
     except DBNotFound as err:
+        logger.info(f"DELETE:Success handle exception:/delete_all_note_by_theme_id:{theme_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except InvalidIdException as err:
+        logger.info(f"GET:Success handle exception:/delete_all_note_by_theme_id:{theme_id}:{err}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))

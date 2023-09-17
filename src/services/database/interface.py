@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from src.core.models.UserModel import UserModel
 from src.core.models.AlarmModel import AlarmModel
 from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
-from src.core.models.NoteModel import NoteModel
+from src.core.models.NoteModel import NoteModelWrite, NoteModel
 
 
 class IDataBase(ABC):
@@ -101,7 +101,7 @@ class IDataBase(ABC):
 
     # --- Notes methods --- #
     @abstractmethod
-    async def write_new_note(self, note: NoteModel) -> str:
+    async def write_new_note(self, note: NoteModelWrite) -> str:
         """Write new note to db"""
         raise NotImplementedError
 
@@ -111,7 +111,7 @@ class IDataBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_notes_by_condition(self, condition: dict) -> list[NoteModel]:
+    async def get_all_notes_by_condition(self, condition: dict) -> list[NoteModelWrite]:
         """Get all notes from db by condition"""
         raise NotImplementedError
 

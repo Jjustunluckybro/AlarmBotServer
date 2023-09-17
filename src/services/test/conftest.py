@@ -13,8 +13,13 @@ class ThemeCash(BaseModel):
     theme_id_2: None | str = None
 
 
+class NoteCash(BaseModel):
+    note_id: None | str = None
+
+
 def pytest_configure():
     pytest.theme_cash = ThemeCash()
+    pytest.note_cash = NoteCash()
 
 
 @pytest.fixture(scope="session")

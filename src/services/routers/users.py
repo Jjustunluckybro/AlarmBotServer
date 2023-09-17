@@ -9,6 +9,8 @@ from src.infrastructure.users.db_interaction import (get_user_from_db, write_use
 from src.services.database.database_exceptions import DBNotFound, DuplicateKey
 from src.services.database.interface import IDataBase
 
+logger = logging.getLogger("app.router.users")
+
 router = APIRouter(
     prefix="/users",
     tags=["users"]
@@ -17,23 +19,30 @@ router = APIRouter(
 
 @router.get("/get_user/{user_telegram_id}", status_code=status.HTTP_200_OK)
 async def get_user(r: Request, user_telegram_id: str) -> UserModel:
+    """"""
+    logger.info(f"GET:Start:/get_user/{user_telegram_id}")
     db: IDataBase = r.app.state.db
     try:
         user = await get_user_from_db(user_id=user_telegram_id,
                                       db=db)
+        logger.info(f"GET:Success:/get_user/{user_telegram_id}:{user}")
         return user
     except DBNotFound as err:
+        logger.info(f"GET:Success:/get_user/{user_telegram_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
 
 @router.post("/create_user", status_code=status.HTTP_201_CREATED)
 async def create_user(r: Request, user: UserModel) -> str:
+    logger.info(f"POST:Start:/create_user:{user}")
     db: IDataBase = r.app.state.db
     try:
         user_id = await write_user_to_db(user=user,
                                          db=db)
+        logger.info(f"POST:Success:/create_user:{user}:{user_id}")
         return user_id
     except DuplicateKey as err:
+        logger.info(f"POST:Success:/create_user:{user}:{err}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
 
 

@@ -6,11 +6,11 @@ from bson.errors import InvalidId
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from src.core.models.AlarmModel import AlarmModel, AlarmStatuses
-from src.core.models.NoteModel import NoteModel
+from src.core.models.AlarmModel import AlarmModel
+from src.core.models.NoteModel import NoteModelWrite, NoteModel
 from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
 from src.core.models.UserModel import UserModel
-from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException, InvalidDict
+from src.services.database.database_exceptions import DBNotFound, DuplicateKey, InvalidIdException
 from src.services.database.interface import IDataBase
 
 logger = logging.getLogger("app.database_api.mongo")
@@ -266,7 +266,7 @@ class MongoAPI(IDataBase):
         return deleted_result.deleted_count
 
     # --- Notes --- #
-    async def write_new_note(self, note: NoteModel) -> str:
+    async def write_new_note(self, note: NoteModelWrite) -> str:
         """Write new note to db"""
         try:
             inserted_obj = await self._collections.notes.insert_one(note.dict())
@@ -282,7 +282,7 @@ class MongoAPI(IDataBase):
         if note is None:
             logger.info(f"Note with id {note_id} not found")
             raise DBNotFound("Note not found")
-        note = self.remove_mongo_primary_id_from_data(note)
+        note = self.change_id_type_in_dict(note)
         note = NoteModel.parse_obj(note)
         return note
 
@@ -291,7 +291,9 @@ class MongoAPI(IDataBase):
         notes = self._collections.notes.find(condition)
         result = list()
         for note in await notes.to_list(length=100):
-            result.append(note)
+            note: dict = dict(note)
+            note = self.change_id_type_in_dict(note)
+            result.append(NoteModel.parse_obj(note))
         if not len(result):
             raise DBNotFound("Notes not found")
         return result

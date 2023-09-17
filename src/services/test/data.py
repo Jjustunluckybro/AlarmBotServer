@@ -1,3 +1,4 @@
+from src.core.models.NoteModel import NoteModelRouterInput, NoteLinksModel, NoteDataModel, CheckPointModel
 from src.core.models.ThemeModel import ThemeModelWrite, ThemesLinksModel
 from src.core.models.UserModel import UserModel
 
@@ -19,7 +20,6 @@ class UserTestData(TestData):
 
 class ThemeTestData(TestData):
     non_exist_id = "11aa204076aa1111a1111a1a"
-    created_theme_id: str | None = None
     user_id = "111111111"
     test_theme_model_to_write = ThemeModelWrite(
         name="test_theme_model_to_write",
@@ -35,3 +35,34 @@ class ThemeTestData(TestData):
         "name": "test_theme_model_to_update",
         "description": "^_^"
     }
+
+
+class NoteTestData(TestData):
+    non_exist_id = "11aa204076aa1111a1111a1a"
+    user_id = "111111111"
+    theme_id = "65059e0f09d5360ce08dfacf"
+    test_note_model_to_write = NoteModelRouterInput(
+        name="Test note",
+        links=NoteLinksModel(
+            user_id=user_id,
+            theme_id=theme_id
+        ),
+        data=NoteDataModel(
+            text="test note text",
+            check_points=[
+                CheckPointModel(
+                    text="test checkpoint 1",
+                    is_finish=True
+                ),
+                CheckPointModel(
+                    text="test checkpoint 1",
+                    is_finish=False
+                )
+            ]
+        )
+    )
+
+
+if __name__ == '__main__':
+    x = NoteTestData()
+    print(x.test_note_model_to_write.json())
