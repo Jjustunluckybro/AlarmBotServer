@@ -316,4 +316,6 @@ class MongoAPI(IDataBase):
     async def delete_all_notes_by_condition(self, condition: dict) -> int:
         """Delete many notes by condition in db"""
         deleted_result = await self._collections.notes.delete_many(condition)
+        if deleted_result.deleted_count == 0:
+            raise DBNotFound("Notes not found")
         return deleted_result.deleted_count

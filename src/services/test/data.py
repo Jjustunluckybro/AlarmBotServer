@@ -61,8 +61,6 @@ class NoteTestData(TestData):
             ]
         )
     )
-
-
-if __name__ == '__main__':
-    x = NoteTestData()
-    print(x.test_note_model_to_write.json())
+    new_data_to_update_note = {
+        "name": "New test name"
+    }

@@ -60,7 +60,7 @@ async def get_all_notes_by_theme_id(r: Request, theme_id: str) -> list[NoteModel
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
-@router.get("/get_all_notes_by_user_id/{user_id}", status_code=status.HTTP_200_OK)  # TODO
+@router.get("/get_all_notes_by_user_id/{user_id}", status_code=status.HTTP_200_OK)
 async def get_all_notes_by_user_id(r: Request, user_id: str) -> list[NoteModel]:
     logger.info(f"GET:Start:/get_all_notes_by_user_id:{user_id}")
     db: IDataBase = r.app.state.db
@@ -87,9 +87,6 @@ async def update_note(r: Request, note_id: str, new_data: dict) -> dict:
     except DBNotFound as err:
         logger.info(f"GET:Success handle exception:/update_note:{note_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
-    except InvalidIdException as err:
-        logger.info(f"GET:Success handle exception:/update_note:{note_id}:{err}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.delete("/delete_note/{note_id}", status_code=status.HTTP_200_OK)
@@ -109,13 +106,13 @@ async def delete_note(r: Request, note_id: str) -> dict:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
-@router.delete("/delete_all_note_by_theme_id/{theme_id}", status_code=status.HTTP_200_OK)  # TODO
+@router.delete("/delete_all_note_by_theme_id/{theme_id}", status_code=status.HTTP_200_OK)
 async def delete_all_note_by_theme_id(r: Request, theme_id: str) -> dict:
     logger.info(f"DELETE:Start:/delete_all_note_by_theme_id/{theme_id}")
     db: IDataBase = r.app.state.db
     try:
         deleted_count = await db_interaction.delete_all_notes_by_condition(
-            {"links": {"theme_id": theme_id}}, db
+            {"links.theme_id": theme_id}, db
         )
         result = {"deleted_count": deleted_count}
         logger.info(f"DELETE:Success:/delete_all_note_by_theme_id/{theme_id}:")
@@ -123,6 +120,3 @@ async def delete_all_note_by_theme_id(r: Request, theme_id: str) -> dict:
     except DBNotFound as err:
         logger.info(f"DELETE:Success handle exception:/delete_all_note_by_theme_id:{theme_id}:{err}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
-    except InvalidIdException as err:
-        logger.info(f"GET:Success handle exception:/delete_all_note_by_theme_id:{theme_id}:{err}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
