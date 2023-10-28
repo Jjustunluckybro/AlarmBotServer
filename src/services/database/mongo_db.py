@@ -21,6 +21,13 @@ class MongoAPI(IDataBase):
     _db = AsyncIOMotorClient
     _collections = dict
 
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+
     def connect_to_db(self, password: str) -> bool:
         try:
             # Connect client

@@ -5,10 +5,9 @@ from pydantic import BaseModel
 
 
 class AlarmStatuses(str, Enum):
+    READY = "READY"
     QUEUE = "QUEUE"
-    POSTPONED = "POSTPONED"
     STOPPED = "STOPPED"
-    DELETED = "DELETED"
 
 
 class AlarmLinksModel(BaseModel):
