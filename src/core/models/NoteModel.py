@@ -55,7 +55,7 @@ class NoteModelWrite(BaseModel):
         )
 
 
-class NoteModelRouterInput(BaseModel):
+class NoteRouterModel(BaseModel):
     name: str
     links: NoteLinksModel
     data: NoteDataModel

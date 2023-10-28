@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 
-from src.core.models.NoteModel import NoteModelWrite, NoteModelRouterInput, NoteTimesModel, NoteModel
+from src.core.models.NoteModel import NoteModelWrite, NoteRouterModel, NoteTimesModel, NoteModel
 
 from src.services.database.interface import IDataBase
 
@@ -10,7 +10,7 @@ async def get_note_from_db(note_id: str, db: IDataBase) -> NoteModel:
     return note
 
 
-async def write_note_to_db(note: NoteModelRouterInput, db: IDataBase) -> str:
+async def write_note_to_db(note: NoteRouterModel, db: IDataBase) -> str:
     note = note.convert_to_note_model_write(times=NoteTimesModel(
         creation_time=dt.now()
     ))

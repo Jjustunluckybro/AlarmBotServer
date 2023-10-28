@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from starlette.requests import Request
 from starlette import status
-from src.core.models.NoteModel import NoteModelRouterInput, NoteModel, NoteLinksModel
+from src.core.models.NoteModel import NoteRouterModel, NoteModel, NoteLinksModel
 from src.utils.depends import get_db
 from src.infrastructure.notes import db_interaction
 from src.services.database.database_exceptions import DBNotFound, InvalidIdException
@@ -17,16 +17,8 @@ router = APIRouter(
 )
 
 
-@router.post("/create_note", status_code=status.HTTP_201_CREATED)
-async def create_note(r: Request, note: NoteModelRouterInput, db: IDataBase = Depends(get_db)) -> str:
-    logger.info(f"POST:Start:/create_note:{note}")
-    note_id = await db_interaction.write_note_to_db(note, db)
-    logger.info(f"POST:Success:/create_note:{note}:{note_id}")
-    return note_id
-
-
 @router.get("/get_note/{note_id}", status_code=status.HTTP_200_OK)
-async def get_note(r: Request, note_id: str, db: IDataBase = Depends(get_db)) -> NoteModel:
+async def get_note(note_id: str, db: IDataBase = Depends(get_db)) -> NoteModel:
     logger.info(f"GET:Start:/get_note:{note_id}")
     try:
         note = await db_interaction.get_note_from_db(note_id, db)
@@ -41,7 +33,7 @@ async def get_note(r: Request, note_id: str, db: IDataBase = Depends(get_db)) ->
 
 
 @router.get("/get_all_notes_by_theme_id/{theme_id}", status_code=status.HTTP_200_OK)
-async def get_all_notes_by_theme_id(r: Request, theme_id: str, db: IDataBase = Depends(get_db)) -> list[NoteModel]:
+async def get_all_notes_by_theme_id(theme_id: str, db: IDataBase = Depends(get_db)) -> list[NoteModel]:
     logger.info(f"GET:Start:/get_all_notes_by_theme_id:{theme_id}")
     try:
         NoteLinksModel.theme_id_must_convert_to_object_id(theme_id)  # Validate theme_id
@@ -59,7 +51,7 @@ async def get_all_notes_by_theme_id(r: Request, theme_id: str, db: IDataBase = D
 
 
 @router.get("/get_all_notes_by_user_id/{user_id}", status_code=status.HTTP_200_OK)
-async def get_all_notes_by_user_id(r: Request, user_id: str, db: IDataBase = Depends(get_db)) -> list[NoteModel]:
+async def get_all_notes_by_user_id(user_id: str, db: IDataBase = Depends(get_db)) -> list[NoteModel]:
     logger.info(f"GET:Start:/get_all_notes_by_user_id:{user_id}")
     try:
         note = await db_interaction.get_all_notes_by_condition(
@@ -72,8 +64,16 @@ async def get_all_notes_by_user_id(r: Request, user_id: str, db: IDataBase = Dep
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
 
+@router.post("/create_note", status_code=status.HTTP_201_CREATED)
+async def create_note(note: NoteRouterModel, db: IDataBase = Depends(get_db)) -> str:
+    logger.info(f"POST:Start:/create_note:{note}")
+    note_id = await db_interaction.write_note_to_db(note, db)
+    logger.info(f"POST:Success:/create_note:{note}:{note_id}")
+    return note_id
+
+
 @router.patch("/update_note/{note_id}", status_code=status.HTTP_200_OK)
-async def update_note(r: Request, note_id: str, new_data: dict, db: IDataBase = Depends(get_db)) -> dict:
+async def update_note(note_id: str, new_data: dict, db: IDataBase = Depends(get_db)) -> dict:
     logger.info(f"PATCH:Start:/update_note/{note_id}|{new_data}")
     try:
         update_count = await db_interaction.update_note(note_id, new_data, db)
