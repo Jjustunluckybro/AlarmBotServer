@@ -1,6 +1,10 @@
+import datetime
+
 from src.core.models.NoteModel import NoteRouterModel, NoteLinksModel, NoteDataModel, CheckPointModel
 from src.core.models.ThemeModel import ThemeModelWrite, ThemesLinksModel
 from src.core.models.UserModel import UserModel
+from src.core.models.AlarmModel import AlarmStatuses, AlarmRouterModel, AlarmModelWrite, AlarmTimesModel, AlarmModel, \
+    AlarmLinksModel
 
 
 class TestData:
@@ -64,3 +68,18 @@ class NoteTestData(TestData):
     new_data_to_update_note = {
         "name": "New test name"
     }
+
+
+class AlarmTestData(TestData):
+    non_exist_id = "11aa204076aa1111a1111a1a"
+    parent_id = "22bb204076aa1111a1111a1a"
+    user_id = "111111111"
+    test_alarm_model_to_write = AlarmRouterModel(
+        name="test alarm",
+        description="test desc",
+        is_repeatable=True,
+        links=AlarmLinksModel(
+            user_id=user_id,
+            parent_id=parent_id
+        )
+    )

@@ -13,7 +13,8 @@ async def get_alarm_from_db(alarm_id: str, db: IDataBase) -> AlarmModel:
 async def write_alarm_to_db(alarm: AlarmRouterModel, db: IDataBase, next_notion_time: datetime,
                             repeat_interval: int | None) -> str:
     alarm_id = await db.write_new_alarm(alarm.convert_to_alarm_model_write(
-        AlarmTimesModel(
+        status=AlarmStatuses.QUEUE.value,
+        times=AlarmTimesModel(
             creation_time=datetime.now(),
             next_notion_time=next_notion_time,
             repeat_interval=repeat_interval,

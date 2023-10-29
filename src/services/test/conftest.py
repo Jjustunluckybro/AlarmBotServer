@@ -17,9 +17,14 @@ class NoteCash(BaseModel):
     note_id: None | str = None
 
 
+class AlarmCash(BaseModel):
+    alarm_id: None | str = None
+
+
 def pytest_configure():
     pytest.theme_cash = ThemeCash()
     pytest.note_cash = NoteCash()
+    pytest.alarm_cash = AlarmCash()
 
 
 @pytest.fixture(scope="session")
