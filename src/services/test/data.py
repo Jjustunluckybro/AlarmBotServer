@@ -1,4 +1,4 @@
-from src.core.models.NoteModel import NoteModelRouterInput, NoteLinksModel, NoteDataModel, CheckPointModel
+from src.core.models.NoteModel import NoteRouterModel, NoteLinksModel, NoteDataModel, CheckPointModel
 from src.core.models.ThemeModel import ThemeModelWrite, ThemesLinksModel
 from src.core.models.UserModel import UserModel
 
@@ -41,7 +41,7 @@ class NoteTestData(TestData):
     non_exist_id = "11aa204076aa1111a1111a1a"
     user_id = "111111111"
     theme_id = "65059e0f09d5360ce08dfacf"
-    test_note_model_to_write = NoteModelRouterInput(
+    test_note_model_to_write = NoteRouterModel(
         name="Test note",
         links=NoteLinksModel(
             user_id=user_id,

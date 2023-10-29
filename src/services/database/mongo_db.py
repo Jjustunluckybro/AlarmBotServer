@@ -6,7 +6,7 @@ from bson.errors import InvalidId
 from pymongo.errors import DuplicateKeyError
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from src.core.models.AlarmModel import AlarmModel
+from src.core.models.AlarmModel import AlarmModel, AlarmRouterModel, AlarmModelWrite
 from src.core.models.NoteModel import NoteModelWrite, NoteModel
 from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
 from src.core.models.UserModel import UserModel
@@ -20,6 +20,13 @@ class MongoAPI(IDataBase):
     _client = AsyncIOMotorClient
     _db = AsyncIOMotorClient
     _collections = dict
+
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
 
     def connect_to_db(self, password: str) -> bool:
         try:
@@ -98,7 +105,7 @@ class MongoAPI(IDataBase):
             return data
 
     @staticmethod
-    def change_alarm_status_type(data: AlarmModel) -> dict:
+    def change_alarm_status_type(data: AlarmModel | AlarmRouterModel | AlarmModelWrite) -> dict:
         result = data.dict()
         result["status"] = data.status.value
         return result
@@ -158,7 +165,7 @@ class MongoAPI(IDataBase):
         return deleted_result.deleted_count
 
     # --- Alarms --- #
-    async def write_new_alarm(self, alarm: AlarmModel) -> str:
+    async def write_new_alarm(self, alarm: AlarmModelWrite) -> str:
         """Add new alarm to Alarm collection Mongo database,
         If alarm with id already exist, rise DuplicateKey exception"""
         alarm_dict = self.change_alarm_status_type(alarm)
@@ -177,7 +184,7 @@ class MongoAPI(IDataBase):
         if alarm is None:
             logger.info(f"Alarm with id {alarm_id} not found")
             raise DBNotFound("Alarm not found")
-        alarm = self.remove_mongo_primary_id_from_data(alarm)
+        alarm = self.change_id_type_in_dict(alarm)
         alarm = AlarmModel.parse_obj(alarm)
         return alarm
 
@@ -186,6 +193,8 @@ class MongoAPI(IDataBase):
         alarms = self._collections.alarms.find(condition)
         result = list()
         for alarm in await alarms.to_list(length=100):
+            alarm: dict = dict(alarm)
+            alarm = self.change_id_type_in_dict(alarm)
             result.append(AlarmModel.parse_obj(alarm))
         if not len(result):
             raise DBNotFound("Alarms match condition not found")

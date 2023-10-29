@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from src.core.models.UserModel import UserModel
-from src.core.models.AlarmModel import AlarmModel
+from src.core.models.AlarmModel import AlarmModel, AlarmRouterModel, AlarmModelWrite
 from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
 from src.core.models.NoteModel import NoteModelWrite, NoteModel
 
@@ -39,7 +39,7 @@ class IDataBase(ABC):
 
     #     # --- Alarm methods --- #
     @abstractmethod
-    async def write_new_alarm(self, alarm: AlarmModel) -> str:
+    async def write_new_alarm(self, alarm: AlarmModelWrite) -> str:
         """Write new alarm to db"""
         raise NotImplementedError
 
