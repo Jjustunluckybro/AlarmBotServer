@@ -34,4 +34,4 @@ jobs:
       - name: Run tests
         env:
           TEST_DB_USER_PASSWORD: ${{ secrets.TEST_DB_USER_PASSWORD }}
-        run: . venv/bin/activate && pytest
+        run: . venv/bin/activate && pytest -vv
