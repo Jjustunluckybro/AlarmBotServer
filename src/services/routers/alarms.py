@@ -3,7 +3,7 @@ import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from starlette import status
 
-from src.core.models.AlarmModel import AlarmModel, AlarmStatuses, AlarmRouterModel
+from src.core.models.AlarmModel import AlarmModel, AlarmStatuses, AlarmRouterModel, AlarmLinksModel
 from src.infrastructure.alarms import db_interaction
 from src.infrastructure.exceptions import AlarmNotRepeatable, UnexpectedInfrastructureException
 from src.utils.depends import get_db
@@ -30,12 +30,15 @@ async def get_alarm(alarm_id: str, db: IDataBase = Depends(get_db)) -> AlarmMode
 @router.get("/get_all_alarm_by_parent_id/{parent_id}", status_code=status.HTTP_200_OK)
 async def get_all_alarms_by_parent_id(parent_id: str, db: IDataBase = Depends(get_db)) -> list[AlarmModel]:
     try:
+        AlarmLinksModel.parent_id_must_convert_to_object_id(parent_id)  # Validate Parent id
         alarms = await db_interaction.get_all_alarm_by_condition(
             {"links.parent_id": parent_id}, db
         )
         return alarms
     except DBNotFound as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.get("/get_all_user_alarms/{user_id}", status_code=status.HTTP_200_OK)
@@ -55,10 +58,10 @@ async def get_all_user_alarms(user_id, db: IDataBase = Depends(get_db)) -> list[
 async def create_alarm(alarm: AlarmRouterModel,
                        next_notion_time: datetime.datetime,
                        repeat_interval: int | None = None,
-                       db: IDataBase = Depends(get_db)) -> dict:
+                       db: IDataBase = Depends(get_db)) -> str:
     alarm_id = await db_interaction.write_alarm_to_db(alarm, db, next_notion_time=next_notion_time,
                                                       repeat_interval=repeat_interval)
-    return {"alarm_id": alarm_id}
+    return alarm_id
 
 
 @router.patch("/postpone_repeatable_alarm/{alarm_id}", status_code=200)
@@ -69,6 +72,8 @@ async def get_all_user_ready_alarms(alarm_id: str, db: IDataBase = Depends(get_d
     except DBNotFound as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
     except AlarmNotRepeatable as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+    except InvalidIdException as err:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
     except UnexpectedInfrastructureException as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -115,6 +120,7 @@ async def delete_alarm(alarm_id: str, db: IDataBase = Depends(get_db)) -> dict:
 @router.delete("/delete_all_alarm_by_parent/{parent_id}", status_code=status.HTTP_200_OK)
 async def delete_all_alarm_by_parent(parent_id: str, db: IDataBase = Depends(get_db)) -> dict:
     try:
+        AlarmLinksModel.parent_id_must_convert_to_object_id(parent_id)  # Validate Parent id
         deleted_count = await db_interaction.delete_all_alarms_by_condition(
             {"links.parent_id": parent_id}, db
         )
@@ -122,6 +128,8 @@ async def delete_all_alarm_by_parent(parent_id: str, db: IDataBase = Depends(get
         return result
     except DBNotFound as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
 
 
 @router.delete("/delete_all_user_alarms/{user_id}", status_code=status.HTTP_200_OK)

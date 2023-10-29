@@ -218,6 +218,8 @@ class MongoAPI(IDataBase):
     async def delete_all_alarms_by_condition(self, condition: dict) -> dict:
         """"""
         deleted_result = await self._collections.alarms.delete_many(condition)
+        if deleted_result.deleted_count == 0:
+            raise DBNotFound("Alarms not found")
         return deleted_result.deleted_count
 
     # --- Themes --- #
