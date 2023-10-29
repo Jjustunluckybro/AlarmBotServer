@@ -5,6 +5,7 @@ from starlette import status
 
 from src.core.models.AlarmModel import AlarmModel, AlarmStatuses, AlarmRouterModel
 from src.infrastructure.alarms import db_interaction
+from src.infrastructure.exceptions import AlarmNotRepeatable, UnexpectedInfrastructureException
 from src.utils.depends import get_db
 from src.services.database.database_exceptions import DBNotFound, InvalidIdException
 from src.services.database.interface import IDataBase
@@ -37,7 +38,7 @@ async def get_all_alarms_by_parent_id(parent_id: str, db: IDataBase = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
 
 
-@router.get("get_all_user_alarms/{user_id}", status_code=status.HTTP_200_OK)
+@router.get("/get_all_user_alarms/{user_id}", status_code=status.HTTP_200_OK)
 async def get_all_user_alarms(user_id, db: IDataBase = Depends(get_db)) -> list[AlarmModel]:
     try:
         alarms = await db_interaction.get_all_alarm_by_condition(
@@ -58,6 +59,19 @@ async def create_alarm(alarm: AlarmRouterModel,
     alarm_id = await db_interaction.write_alarm_to_db(alarm, db, next_notion_time=next_notion_time,
                                                       repeat_interval=repeat_interval)
     return {"alarm_id": alarm_id}
+
+
+@router.patch("/postpone_repeatable_alarm/{alarm_id}", status_code=200)
+async def get_all_user_ready_alarms(alarm_id: str, db: IDataBase = Depends(get_db)) -> dict:
+    try:
+        new_next_notion_time = await db_interaction.postpone_repeatable_alarm(alarm_id, db)
+        return {"next_notion_time": new_next_notion_time}
+    except DBNotFound as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except AlarmNotRepeatable as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+    except UnexpectedInfrastructureException as err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @router.patch("/update_alarm/{alarm_id}", status_code=status.HTTP_200_OK)
