@@ -19,7 +19,7 @@ def on_startup():
 
 
 # Connect to db
-connect_to_db()
+app.state.db = connect_to_db()
 
 # Register routers
 ROUTERS = (
