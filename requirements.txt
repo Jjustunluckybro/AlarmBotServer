@@ -35,3 +35,5 @@ python-dotenv~=1.0.0
 APScheduler~=3.10.4
 beanie~=1.23.6
 asgi-lifespan~=2.1.0
+fastapi-users~=12.1.2
+fastapi-users-db-beanie~=3.0.0
