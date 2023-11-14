@@ -1,11 +1,9 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends
-from fastapi.security import HTTPBasicCredentials
-from starlette.requests import Request
 from starlette import status
+from starlette.requests import Request
 
-from src.services.auth.auth import authenticate_client
+from src.services.auth.auth import get_current_backend_user
+from src.services.auth.database import BackendUser
 
 router = APIRouter(
     # prefix="/"
@@ -19,8 +17,9 @@ def ping(r: Request) -> dict:
     }
 
 
-@router.get("/protect_ping", status_code=status.HTTP_200_OK)
-def protect_ping(r: Request, credentials: Annotated[HTTPBasicCredentials, Depends(authenticate_client)]) -> dict:
+@router.get("/protected_jwt_ping", status_code=status.HTTP_200_OK)
+async def protected_jwt_ping(r: Request, backend_user: BackendUser = Depends(get_current_backend_user)):
     return {
-        "app": r.app.title
+        "app": r.app.title,
+        "user": backend_user.tags
     }

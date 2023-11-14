@@ -17,7 +17,9 @@ class TestThemeRouters:
     async def test_create_theme(self, ac: AsyncClient, code, body):
         r = await ac.post(
             f"themes/create_theme",
-            json=body
+            json=body, headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            }
         )
         assert r.status_code == code
         pytest.theme_cash.theme_id_1 = r.text.replace('"', "")
@@ -47,7 +49,9 @@ class TestThemeRouters:
             theme_id = pytest.theme_cash.theme_id_1
             theme = Data.test_theme_model_to_write.convert_to_theme_model(theme_id).dict(by_alias=True)
 
-        r = await ac.get(f"themes/get_theme/{theme_id}")
+        r = await ac.get(f"themes/get_theme/{theme_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
         assert r.json() == theme
 
@@ -63,7 +67,9 @@ class TestThemeRouters:
             theme_id = pytest.theme_cash.theme_id_1
             res_body = [Data.test_theme_model_to_write.convert_to_theme_model(theme_id).dict(by_alias=True)]
 
-        r = await ac.get(f"themes/get_all_user_themes/{user_id}")
+        r = await ac.get(f"themes/get_all_user_themes/{user_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
         assert r.json() == res_body
 
@@ -95,7 +101,9 @@ class TestThemeRouters:
 
         r = await ac.patch(
             f"themes/update_theme/{theme_id}",
-            json=to_update
+            json=to_update, headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            }
         )
         assert r.status_code == code
         assert r.json() == res_body
@@ -122,7 +130,9 @@ class TestThemeRouters:
         if code == status.HTTP_200_OK:
             theme_id = pytest.theme_cash.theme_id_1
 
-        r = await ac.delete(f"themes/delete_theme/{theme_id}")
+        r = await ac.delete(f"themes/delete_theme/{theme_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
         assert r.json() == res_body
 
@@ -138,9 +148,13 @@ class TestThemeRouters:
             for i in range(0, 3):
                 await ac.post(
                     f"themes/create_theme",
-                    json=Data.test_theme_model_to_write.dict()
+                    json=Data.test_theme_model_to_write.dict(), headers={
+                        "Authorization": f"bearer {pytest.auth.token}"
+                    }
                 )
 
-        r = await ac.delete(f"themes/delete_all_user_themes/{user_id}")
+        r = await ac.delete(f"themes/delete_all_user_themes/{user_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
         assert r.json() == res_body

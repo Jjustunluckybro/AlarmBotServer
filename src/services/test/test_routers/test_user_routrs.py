@@ -27,7 +27,10 @@ class TestUserRouters:
     async def test_create_user(self, ac: AsyncClient, code, body):
         r = await ac.post(
             "/users/create_user",
-            json=body
+            json=body,
+            headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            }
         )
         assert r.status_code == code
 
@@ -49,8 +52,10 @@ class TestUserRouters:
     )
     async def test_get_user(self, ac: AsyncClient, user_id, code, res_body):
         r = await ac.get(
-            f"/users/get_user/{user_id}"
-        )
+            f"/users/get_user/{user_id}",
+            headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            })
         assert r.status_code == code
         assert r.json() == res_body
 
@@ -69,8 +74,10 @@ class TestUserRouters:
     )
     async def test_update_username(self, ac: AsyncClient, user_id, code):
         r = await ac.patch(
-            f"users/update_username/{user_id}?new_name=NewTestName1"
-        )
+            f"users/update_username/{user_id}?new_name=NewTestName1",
+            headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            })
         assert r.status_code == code
 
     @pytest.mark.parametrize(
@@ -90,7 +97,9 @@ class TestUserRouters:
     )
     async def test_delete_user(self, ac: AsyncClient, user_id, code, res_body):
         r = await ac.delete(
-            f"users/delete_user/{user_id}"
-        )
+            f"users/delete_user/{user_id}",
+            headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            })
         assert r.status_code == code
         assert r.json() == res_body
