@@ -1,11 +1,16 @@
 import asyncio
-import pytest
-
 from typing import AsyncGenerator
+
+import pytest
+from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
 from pydantic import BaseModel
 
 from src.app_main import app
+
+
+class BackendUserData(BaseModel):
+    token: str | None = None
 
 
 class ThemeCash(BaseModel):
@@ -25,6 +30,7 @@ def pytest_configure():
     pytest.theme_cash = ThemeCash()
     pytest.note_cash = NoteCash()
     pytest.alarm_cash = AlarmCash()
+    pytest.auth = BackendUserData()
 
 
 @pytest.fixture(scope="session")
@@ -37,5 +43,6 @@ def event_loop():
 
 @pytest.fixture(scope="session")
 async def ac() -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
+    async with LifespanManager(app):
+        async with AsyncClient(app=app, base_url="http://test.io") as ac:
+            yield ac

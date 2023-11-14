@@ -17,7 +17,9 @@ class TestNoteRouter:
     async def test_create_note(self, ac: AsyncClient, code, body):
         r = await ac.post(
             "notes/create_note",
-            json=body
+            json=body, headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            }
         )
         assert r.status_code == code
         pytest.note_cash.note_id = r.text.replace('"', "")
@@ -37,7 +39,9 @@ class TestNoteRouter:
         if status.HTTP_200_OK == code:
             note_id = pytest.note_cash.note_id
 
-        r = await ac.get(f"notes/get_note/{note_id}")
+        r = await ac.get(f"notes/get_note/{note_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
 
     @pytest.mark.parametrize(
@@ -49,7 +53,9 @@ class TestNoteRouter:
         ]
     )
     async def test_get_all_notes_by_theme_id(self, ac: AsyncClient, code, theme_id):
-        r = await ac.get(f"notes/get_all_notes_by_theme_id/{theme_id}")
+        r = await ac.get(f"notes/get_all_notes_by_theme_id/{theme_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
 
     @pytest.mark.parametrize(
@@ -60,7 +66,9 @@ class TestNoteRouter:
         ]
     )
     async def test_get_all_notes_by_user_id(self, ac: AsyncClient, code, user_id):
-        r = await ac.get(f"notes/get_all_notes_by_user_id/{user_id}")
+        r = await ac.get(f"notes/get_all_notes_by_user_id/{user_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
 
     @pytest.mark.parametrize(
@@ -84,7 +92,9 @@ class TestNoteRouter:
         if code == status.HTTP_200_OK:
             note_id = pytest.note_cash.note_id
         r = await ac.patch(
-            f"notes/update_note/{note_id}",
+            f"notes/update_note/{note_id}", headers={
+                "Authorization": f"bearer {pytest.auth.token}"
+            },
             json=new_data
         )
         assert r.status_code == code
@@ -101,7 +111,9 @@ class TestNoteRouter:
     async def test_delete_note(self, ac: AsyncClient, code, note_id):
         if code == status.HTTP_200_OK:
             note_id = pytest.note_cash.note_id
-        r = await ac.delete(f"notes/delete_note/{note_id}")
+        r = await ac.delete(f"notes/delete_note/{note_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
 
     @pytest.mark.parametrize(
@@ -116,9 +128,13 @@ class TestNoteRouter:
             for i in range(0, 3):
                 await ac.post(
                     "notes/create_note",
-                    json=Data.test_note_model_to_write.dict()
+                    json=Data.test_note_model_to_write.dict(), headers={
+                        "Authorization": f"bearer {pytest.auth.token}"
+                    }
                 )
 
-        r = await ac.delete(f"notes/delete_all_note_by_theme_id/{theme_id}")
+        r = await ac.delete(f"notes/delete_all_note_by_theme_id/{theme_id}", headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
         assert r.json() == res_body

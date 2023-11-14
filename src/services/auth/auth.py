@@ -1,21 +1,14 @@
-import os
-from typing import Annotated
+from bson import ObjectId
+from fastapi_users import FastAPIUsers
 
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from starlette import status
+from src.services.auth.auth_backend import auth_backend
+from src.services.auth.database import BackendUser
+from src.services.auth.manager import get_user_manager
 
-security = HTTPBasic()
+auth_fastapi_users = FastAPIUsers[BackendUser, ObjectId](
+    get_user_manager,
+    [auth_backend],
+)
 
 
-def authenticate_client(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
-    username = os.getenv("CLIENT_NAME")
-    password = os.getenv("CLIENT_PASSWORD")
-
-    if credentials.username != username or credentials.password != password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f'User {credentials.username} not found',
-            headers={'WWW-Authenticate': 'Basic'}
-        )
-    return True
+get_current_backend_user = auth_fastapi_users.current_user()

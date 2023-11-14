@@ -1,10 +1,7 @@
-import datetime
-
+from src.core.models.AlarmModel import AlarmRouterModel, AlarmLinksModel
 from src.core.models.NoteModel import NoteRouterModel, NoteLinksModel, NoteDataModel, CheckPointModel
 from src.core.models.ThemeModel import ThemeModelWrite, ThemesLinksModel
 from src.core.models.UserModel import UserModel
-from src.core.models.AlarmModel import AlarmStatuses, AlarmRouterModel, AlarmModelWrite, AlarmTimesModel, AlarmModel, \
-    AlarmLinksModel
 
 
 class TestData:
