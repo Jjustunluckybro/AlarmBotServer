@@ -5,5 +5,5 @@ from src.utils import config
 
 def connect_to_db() -> IDataBase:
     db = MongoAPI()
-    db.connect_to_db(config.TEST_DB_USER_PASSWORD)
+    db.connect_to_db(config.DB_USER_PASSWORD)
     return db

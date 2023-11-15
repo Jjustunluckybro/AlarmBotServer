@@ -3,9 +3,9 @@ from beanie import Document, init_beanie
 from fastapi_users.db import BeanieBaseUser, BeanieUserDatabase
 
 from src.services.database.mongo_db import MongoAPI
-from src.utils.config import TEST_DB_USER_PASSWORD
+from src.utils.config import DB_USER_PASSWORD
 
-DATABASE_URL = MongoAPI.get_connection_string(TEST_DB_USER_PASSWORD)
+DATABASE_URL = MongoAPI.get_connection_string(DB_USER_PASSWORD)
 client = motor.motor_asyncio.AsyncIOMotorClient(
     DATABASE_URL, uuidRepresentation="standard"
 )

@@ -32,7 +32,9 @@ jobs:
 
       - name: run tests
         env:
-          TEST_DB_USER_PASSWORD: ${{ secrets.TEST_DB_USER_PASSWORD }}
+          APP_HOST: ${{ secrets.APP_HOST }}
+          APP_PORT: ${{ secrets.APP_PORT }}
+          DB_USER_PASSWORD: ${{ secrets.DB_USER_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           VERIFICATION_TOKEN_SECRET: ${{ secrets.VERIFICATION_TOKEN_SECRET }}
           TEST_BACKEND_USER_USERNAME: ${{ secrets.TEST_BACKEND_USER_USERNAME }}
