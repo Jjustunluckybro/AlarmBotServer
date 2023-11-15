@@ -11,6 +11,7 @@ from src.services.routers.notes import router as note_routers
 from src.services.routers.ping import router as ping_router
 from src.services.routers.themes import router as themes_routers
 from src.services.routers.users import router as user_routers
+from src.utils.config import APP_PORT, APP_HOST
 
 # Create fastApi app
 app = FastAPI(title="Alarm_bot_api")
@@ -52,4 +53,4 @@ app.include_router(
 # )
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=APP_HOST, port=APP_PORT)
