@@ -1,11 +1,13 @@
 from datetime import datetime as dt
-
+from logging import getLogger
 
 from src.core.models.AlarmModel import AlarmStatuses
 from src.infrastructure.alarms.db_interaction import get_all_queued_alarms, update_alarm
 from src.services.database.database_exceptions import DBNotFound
 from src.services.database.interface import IDataBase
 from src.utils.depends import get_db
+
+logger = getLogger(__name__)
 
 
 async def check_queue_status() -> None:
@@ -22,3 +24,5 @@ async def check_queue_status() -> None:
                     new_data={"status": AlarmStatuses.READY.value},
                     db=db
                 )
+    finally:
+        logger.info("check_queue_status job done")
