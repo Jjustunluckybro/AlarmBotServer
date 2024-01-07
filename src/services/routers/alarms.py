@@ -32,8 +32,8 @@ async def get_alarm(alarm_id: str, db: IDataBase = Depends(get_db),
 
 @router.get("/get_all_alarm_by_parent_id/{parent_id}", status_code=status.HTTP_200_OK)
 async def get_all_alarms_by_parent_id(parent_id: str, db: IDataBase = Depends(get_db),
-                                      backend_user: BackendUser = Depends(get_current_backend_user)) -> list[
-    AlarmModel]:
+                                      backend_user: BackendUser = Depends(get_current_backend_user)
+                                      ) -> list[AlarmModel]:
     try:
         AlarmLinksModel.parent_id_must_convert_to_object_id(parent_id)  # Validate Parent id
         alarms = await db_interaction.get_all_alarm_by_condition(
@@ -52,6 +52,21 @@ async def get_all_user_alarms(user_id, db: IDataBase = Depends(get_db),
     try:
         alarms = await db_interaction.get_all_alarm_by_condition(
             {"links.user_id": user_id}, db
+        )
+        return alarms
+    except DBNotFound as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+
+
+@router.get("/get_all_ready_alarms", status_code=status.HTTP_200_OK)
+async def get_all_ready_alarms(db: IDataBase = Depends(get_db),
+                               backend_user: BackendUser = Depends(get_current_backend_user)
+                               ) -> list[AlarmModel]:
+    try:
+        alarms = await db_interaction.get_all_alarm_by_condition(
+            {"status": AlarmStatuses.READY.value}, db
         )
         return alarms
     except DBNotFound as err:
