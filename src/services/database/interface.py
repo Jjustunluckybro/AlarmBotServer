@@ -111,7 +111,7 @@ class IDataBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_notes_by_condition(self, condition: dict) -> list[NoteModelWrite]:
+    async def get_all_notes_by_condition(self, condition: dict) -> list[NoteModel]:
         """Get all notes from db by condition"""
         raise NotImplementedError
 

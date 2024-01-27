@@ -20,7 +20,7 @@ async def write_note_to_db(note: NoteRouterModel, db: IDataBase) -> str:
     return note_id
 
 
-async def get_all_notes_by_condition(condition: dict, db: IDataBase) -> [NoteModelWrite]:
+async def get_all_notes_by_condition(condition: dict, db: IDataBase) -> list[NoteModel]:
     notes = await db.get_all_notes_by_condition(condition)
     return notes
 
