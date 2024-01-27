@@ -1,4 +1,6 @@
 from src.core.models.ThemeModel import ThemeModel, ThemeModelWrite
+from src.infrastructure.notes.db_interaction import delete_note, get_all_notes_by_condition
+from src.services.database.database_exceptions import DBNotFound
 
 from src.services.database.interface import IDataBase
 
@@ -24,8 +26,16 @@ async def update_theme(theme_id: str, new_data: dict, db: IDataBase) -> int:
 
 
 async def delete_theme_from_db(theme_id: str, db: IDataBase) -> int:
-    deleted_counter = await db.delete_theme_by_id(theme_id)
-    return deleted_counter
+    try:
+        themes_notes = await get_all_notes_by_condition({"links.theme_id": theme_id}, db)
+    except DBNotFound:
+        ...
+    else:
+        for note in themes_notes:
+            await delete_note(note.id, db)
+    finally:
+        deleted_counter = await db.delete_theme_by_id(theme_id)
+        return deleted_counter
 
 
 async def delete_all_themes_from_db_by_condition(condition: dict, db: IDataBase) -> int:
