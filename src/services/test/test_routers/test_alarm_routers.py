@@ -100,7 +100,7 @@ class TestAlarmRouters:
     @pytest.mark.parametrize(
         "code, alarm_id, new_data",
         [
-            (status.HTTP_200_OK, None, {"name": "New test name"}),
+            (status.HTTP_200_OK, None, {"name": "New test name", "status": "READY"}),
             (status.HTTP_404_NOT_FOUND, Data.non_exist_id, {}),
             (status.HTTP_400_BAD_REQUEST, 1, {})
         ]
@@ -109,6 +109,13 @@ class TestAlarmRouters:
         if status.HTTP_200_OK == code:
             alarm_id = pytest.alarm_cash.alarm_id
         r = await ac.patch(f"alarms/update_alarm/{alarm_id}", json=new_data, headers={
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
+        assert r.status_code == code
+
+    async def test_get_all_ready_alarm(self, ac: AsyncClient, code: int = status.HTTP_200_OK):
+
+        r = await ac.get("alarms/get_all_ready_alarms", headers={
             "Authorization": f"bearer {pytest.auth.token}"
         })
         assert r.status_code == code
@@ -175,6 +182,6 @@ class TestAlarmRouters:
                 }
             )
         r = await ac.delete(f"alarms/delete_all_user_alarms/{user_id}", headers={
-                    "Authorization": f"bearer {pytest.auth.token}"
-                })
+            "Authorization": f"bearer {pytest.auth.token}"
+        })
         assert r.status_code == code
