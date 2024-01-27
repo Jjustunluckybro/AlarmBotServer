@@ -2,6 +2,7 @@ from datetime import datetime as dt
 
 from src.core.models.NoteModel import NoteModelWrite, NoteRouterModel, NoteTimesModel, NoteModel
 from src.infrastructure.alarms.db_interaction import delete_all_alarms_by_condition
+from src.services.database.database_exceptions import DBNotFound
 
 from src.services.database.interface import IDataBase
 
@@ -31,7 +32,10 @@ async def update_note(note_id: str, new_data: dict, db: IDataBase) -> int:
 
 async def delete_note(note_id: str, db: IDataBase) -> int:
     deleted_count = await db.delete_note_by_id(note_id)
-    await delete_all_alarms_by_condition({"links.parent_id": note_id}, db)
+    try:
+        await delete_all_alarms_by_condition({"links.parent_id": note_id}, db)
+    except DBNotFound:
+        ...
     return deleted_count
 
 
