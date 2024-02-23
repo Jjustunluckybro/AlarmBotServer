@@ -9,4 +9,4 @@ jobs:
 
     steps:
       - name: Print TEST
-        run: echo "TEST"
+        run: echo "TEST2"
