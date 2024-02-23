@@ -18,8 +18,13 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+
+      - name: Stop existing container
+        run: docker stop alarm-bot-server || true
+
+      - name: Remove existing container
+        run: docker rm alarm-bot-server || true
 
       - name: Build Docker image
         run: docker build -t alarm-bot-server .
@@ -33,4 +38,4 @@ jobs:
           VERIFICATION_TOKEN_SECRET: ${{ secrets.VERIFICATION_TOKEN_SECRET }}
           TEST_BACKEND_USER_USERNAME: ${{ secrets.TEST_BACKEND_USER_USERNAME }}
           TEST_BACKEND_USER_PASSWORD: ${{ secrets.TEST_BACKEND_USER_PASSWORD }}
-        run: docker run -p 80:8000 --env APP_HOST=$APP_HOST --env APP_PORT=$APP_PORT --env DB_USER_PASSWORD=$DB_USER_PASSWORD --env JWT_SECRET=$JWT_SECRET --env VERIFICATION_TOKEN_SECRET=$VERIFICATION_TOKEN_SECRET alarm-bot-server
+        run: docker run -d -p 80:8000  --restart always --name alarm-bot-server --env APP_HOST=$APP_HOST --env APP_PORT=$APP_PORT --env DB_USER_PASSWORD=$DB_USER_PASSWORD --env JWT_SECRET=$JWT_SECRET --env VERIFICATION_TOKEN_SECRET=$VERIFICATION_TOKEN_SECRET alarm-bot-server
