@@ -1,14 +1,13 @@
-name: CD
+name: Build
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - cd-test
+
 jobs:
-  routers_tests:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: local-runner
 
     steps:
       - uses: actions/checkout@v3
