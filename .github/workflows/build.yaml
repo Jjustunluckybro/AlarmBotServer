@@ -6,42 +6,14 @@ on:
       - cd-test
 
 jobs:
-  build:
-    runs-on: self-hosted
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build Docker image
-        run: docker build -t alarm-bot-server .
-
-      - name: Configure SSH keys for machine access
-        uses: webfactory/ssh-agent@v0.5.0
+  routers_tests:
+    runs-on: local-runner
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build
+        uses: docker/build-push-action@v3
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to machine
-        env:
-          APP_HOST: ${{ secrets.APP_HOST }}
-          APP_PORT: ${{ secrets.APP_PORT }}
-          DB_USER_PASSWORD: ${{ secrets.DB_USER_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          VERIFICATION_TOKEN_SECRET: ${{ secrets.VERIFICATION_TOKEN_SECRET }}
-          TEST_BACKEND_USER_USERNAME: ${{ secrets.TEST_BACKEND_USER_USERNAME }}
-          TEST_BACKEND_USER_PASSWORD: ${{ secrets.TEST_BACKEND_USER_PASSWORD }}
-        run: |
-          docker stop alarm-bot-server-container || true
-          docker rm alarm-bot-server-container || true
-          docker rmi alarm-bot-server || true
-          docker build -t alarm-bot-server .
-          docker run -d \
-            --name alarm-bot-server-container \
-            -p 8000:8000 \
-            -e APP_HOST=$APP_HOST \
-            -e APP_PORT=$APP_PORT \
-            -e DB_USER_PASSWORD=$DB_USER_PASSWORD \
-            -e JWT_SECRET=$JWT_SECRET \
-            -e VERIFICATION_TOKEN_SECRET=$VERIFICATION_TOKEN_SECRET \
-            -e TEST_BACKEND_USER_USERNAME=$TEST_BACKEND_USER_USERNAME \
-            -e TEST_BACKEND_USER_PASSWORD=$TEST_BACKEND_USER_PASSWORD \
-            alarm-bot-server
+          push: false
+          tags: user/app:latest
