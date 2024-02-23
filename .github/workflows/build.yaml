@@ -1,20 +1,39 @@
-name: Build
-
 on:
+  # Triggers the workflow on pull request events
   push:
     branches:
-      - cd-test
+      - main
 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs
 jobs:
+  # Single job called "routers_tests"
   build:
+    # The type of runner that the job will run on
     runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build
-        uses: docker/build-push-action@v3
-        with:
-          push: false
-          tags: user/app:latest
+      - uses: actions/checkout@v3
+
+      - name: Stop existing container
+        run: docker stop alarm-bot-server || true
+
+      - name: Remove existing container
+        run: docker rm alarm-bot-server || true
+
+      - name: Build Docker image
+        run: docker build -t alarm-bot-server .
+
+      - name: Run Docker container
+        env:
+          APP_HOST: ${{ secrets.APP_HOST }}
+          APP_PORT: ${{ secrets.APP_PORT }}
+          DB_USER_PASSWORD: ${{ secrets.DB_USER_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          VERIFICATION_TOKEN_SECRET: ${{ secrets.VERIFICATION_TOKEN_SECRET }}
+          TEST_BACKEND_USER_USERNAME: ${{ secrets.TEST_BACKEND_USER_USERNAME }}
+          TEST_BACKEND_USER_PASSWORD: ${{ secrets.TEST_BACKEND_USER_PASSWORD }}
+        run: docker run -d -p 80:8000  --restart always --name alarm-bot-server --env APP_HOST=$APP_HOST --env APP_PORT=$APP_PORT --env DB_USER_PASSWORD=$DB_USER_PASSWORD --env JWT_SECRET=$JWT_SECRET --env VERIFICATION_TOKEN_SECRET=$VERIFICATION_TOKEN_SECRET alarm-bot-server

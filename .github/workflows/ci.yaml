@@ -1,6 +1,9 @@
 on:
   # Triggers the workflow on pull request events
   pull_request:
+    branches:
+      - main
+      - dev
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -10,7 +13,7 @@ jobs:
   # Single job called "routers_tests"
   routers_tests:
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -18,7 +21,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build Docker image
-        run: docker build -t alarm_bot_server .
+        run: docker build -t alarm-bot-server .
 
       - name: Run tests in Docker container
         env:
@@ -29,4 +32,4 @@ jobs:
           VERIFICATION_TOKEN_SECRET: ${{ secrets.VERIFICATION_TOKEN_SECRET }}
           TEST_BACKEND_USER_USERNAME: ${{ secrets.TEST_BACKEND_USER_USERNAME }}
           TEST_BACKEND_USER_PASSWORD: ${{ secrets.TEST_BACKEND_USER_PASSWORD }}
-        run: docker run --env APP_HOST=$APP_HOST --env APP_PORT=$APP_PORT --env DB_USER_PASSWORD=$DB_USER_PASSWORD --env JWT_SECRET=$JWT_SECRET --env VERIFICATION_TOKEN_SECRET=$VERIFICATION_TOKEN_SECRET --env TEST_BACKEND_USER_USERNAME=$TEST_BACKEND_USER_USERNAME --env TEST_BACKEND_USER_PASSWORD=$TEST_BACKEND_USER_PASSWORD alarm_bot_server pytest -vv -s
+        run: docker run --env APP_HOST=$APP_HOST --env APP_PORT=$APP_PORT --env DB_USER_PASSWORD=$DB_USER_PASSWORD --env JWT_SECRET=$JWT_SECRET --env VERIFICATION_TOKEN_SECRET=$VERIFICATION_TOKEN_SECRET --env TEST_BACKEND_USER_USERNAME=$TEST_BACKEND_USER_USERNAME --env TEST_BACKEND_USER_PASSWORD=$TEST_BACKEND_USER_PASSWORD alarm-bot-server pytest -vv -s
