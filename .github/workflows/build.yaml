@@ -6,8 +6,9 @@ on:
       - cd-test
 
 jobs:
-  routers_tests:
+  build:
     runs-on: local-runner
+    steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
