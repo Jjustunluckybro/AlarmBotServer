@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.requests import Request
@@ -13,7 +15,8 @@ router = APIRouter(
 @router.get("/ping", status_code=status.HTTP_200_OK)
 def ping(r: Request) -> dict:
     return {
-        "app": r.app.title
+        "app": r.app.title,
+        "server_time": datetime.now()
     }
 
 
