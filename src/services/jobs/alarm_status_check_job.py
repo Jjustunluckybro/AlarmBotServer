@@ -1,3 +1,4 @@
+import datetime
 from datetime import datetime as dt
 from logging import getLogger
 
@@ -18,7 +19,10 @@ async def check_queue_status() -> None:
         return
     else:
         for alarm in alarms:
-            if alarm.times.next_notion_time is not None and alarm.times.next_notion_time < dt.now():
+            user = await db.get_user_by_id(alarm.links.user_id)
+            user_tz = user.timezone
+            due_time = dt.now() + datetime.timedelta(user_tz)
+            if alarm.times.next_notion_time is not None and alarm.times.next_notion_time < due_time:
                 await update_alarm(
                     alarm_id=alarm.id,
                     new_data={"status": AlarmStatuses.READY.value},
