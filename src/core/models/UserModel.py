@@ -7,6 +7,7 @@ class UserModel(BaseModel):
     """Model representing the telegram user!"""
     telegram_id: str
     user_name: str
+    timezone: int
     lang_code: str
     first_name: Optional[str]
     last_name: Optional[str]

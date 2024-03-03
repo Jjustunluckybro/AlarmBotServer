@@ -14,6 +14,7 @@ class UserTestData(TestData):
         telegram_id="123456789",
         user_name="TestUserName1",
         lang_code="Ru",
+        timezone=0,
         first_name="TestFirstName1",
         last_name="TestLastName1"
     )

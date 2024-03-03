@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.requests import Request
@@ -15,8 +13,7 @@ router = APIRouter(
 @router.get("/ping", status_code=status.HTTP_200_OK)
 def ping(r: Request) -> dict:
     return {
-        "app": r.app.title,
-        "server_time": datetime.now()
+        "app": r.app.title
     }
 
 
@@ -24,6 +21,5 @@ def ping(r: Request) -> dict:
 async def protected_jwt_ping(r: Request, backend_user: BackendUser = Depends(get_current_backend_user)):
     return {
         "app": r.app.title,
-        "user": backend_user.tags,
-        "foo": "foo"
+        "user": backend_user.tags
     }
