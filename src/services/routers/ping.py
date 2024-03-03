@@ -21,6 +21,5 @@ def ping(r: Request) -> dict:
 async def protected_jwt_ping(r: Request, backend_user: BackendUser = Depends(get_current_backend_user)):
     return {
         "app": r.app.title,
-        "user": backend_user.tags,
-        "foo": "foo"
+        "user": backend_user.tags
     }
