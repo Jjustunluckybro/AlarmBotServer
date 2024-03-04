@@ -24,7 +24,7 @@ async def check_queue_status() -> None:
             user_tz = user.timezone
             due_time = dt.now() + datetime.timedelta(hours=user_tz)
             next_notion_time = alarm.times.next_notion_time
-            if (next_notion_time is not None) and (next_notion_time > due_time):
+            if (next_notion_time is not None) and (next_notion_time < due_time):
                 await update_alarm(
                     alarm_id=alarm.id,
                     new_data={"status": AlarmStatuses.READY.value},
